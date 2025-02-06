@@ -176,3 +176,5 @@ cython_debug/
 
 db.sqlite3
 *.db
+
+.idea/
