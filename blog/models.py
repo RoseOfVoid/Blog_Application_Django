@@ -1,6 +1,7 @@
 from django.db.models import Model, CharField, SlugField, TextField, DateTimeField, Index
-from django.forms import models
+from django.db import models
 from django.utils import timezone
+from django.conf import settings
 
 class Post(Model):
     class Status(models.TextChoices):
@@ -9,6 +10,7 @@ class Post(Model):
 
     title = CharField(max_length=250)
     slug = SlugField(max_length=250)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='blog_post')
     body = TextField()
     publish = DateTimeField(default=timezone.now)
     created = DateTimeField(auto_now_add=True)
