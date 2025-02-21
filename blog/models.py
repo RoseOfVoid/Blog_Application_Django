@@ -1,4 +1,4 @@
-from django.db.models import Model, CharField, SlugField, TextField, DateTimeField, Index
+from django.db.models import Model, CharField, SlugField, TextField, DateTimeField, Index, URLField
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
@@ -24,6 +24,11 @@ class Post(Model):
     created = DateTimeField(auto_now_add=True)
     updated = DateTimeField(auto_now=True)
     status = CharField(max_length=2, choices=Status, default=Status.DRAFT)
+
+    cover_img = URLField(blank=True, null=True,
+                         default='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Altja_j%C3%B5gi_Lahemaal.jpg/1920px-Altja_j%C3%B5gi_Lahemaal.jpg'
+                         )
+    img_description = TextField(blank=True, null=True, default='Forest with a river')
 
     objects = models.Manager() # Default manager
     published = PublishedManager() # Our custom manager
