@@ -5,5 +5,5 @@ from .views import *
 app_name = 'blog'
 urlpatterns = [
     path('', post_list, name='list'),
-    path('post/<int:id>/', post_detail, name='detail')
+    path('post/<int:year>/<int:month>/<int:day>/<slug:slug>/', post_detail, name='detail'),
 ]
