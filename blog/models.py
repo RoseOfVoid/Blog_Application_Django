@@ -1,4 +1,4 @@
-from django.db.models import Model, CharField, SlugField, TextField, DateTimeField, Index, URLField
+from django.db.models import Model, CharField, SlugField, TextField, DateTimeField, Index, URLField, ForeignKey, BooleanField, EmailField
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
@@ -49,3 +49,20 @@ class Post(Model):
             'blog:detail',
             args=[self.publish.year, self.publish.month, self.publish.day, self.slug]
         )
+
+
+class Comment(Model):
+    post = ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
+    name = CharField(max_length=80)
+    email = EmailField()
+    body = TextField()
+    created = DateTimeField(auto_now_add=True)
+    updated = DateTimeField(auto_now=True)
+    active = BooleanField(default=True)
+
+    class Meta:
+        ordering = ['created']
+        indexes = [Index(fields=['created']),]
+
+        def __str__(self):
+            return f"Comment by {self.name} on {self.post}"
