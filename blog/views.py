@@ -16,7 +16,9 @@ class PostListView(ListView):
 
 def post_detail(request, year, month, day, slug):
     post = get_object_or_404(Post, status=Post.Status.PUBLISHED, slug=slug, publish__year=year, publish__month=month, publish__day=day)
-    context = {'post': post}
+    comments = post.comments.filter(active=True)
+    form = CommentForm()
+    context = {'post': post, 'comments': comments, 'form': form}
     return render(request, 'blog/post/detail.html', context)
 
 
@@ -51,4 +53,4 @@ def post_comment(request, post_id):
         comment.post = post
         comment.save()
     context = {'post': post, 'form': form, 'comment': comment}
-    return(request, 'blog/post/comment.html', context)
+    return render(request, 'blog/post/comment.html', context)
