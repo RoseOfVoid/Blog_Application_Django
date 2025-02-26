@@ -13,14 +13,14 @@ class PostListView(ListView):
     paginate_by = 3
     template_name = 'blog/post/list.html'
 
-    def setup(self, request, *args, **kwargs):
-        super(request, *args, **kwargs)
+    def get_queryset(self, *args, **kwargs):
+        return Post.published.all()
 
-    def get_queryset(self, tag_slug=None):
-        if tag_slug:
-            tag = get_object_or_404(Tag, slug=tag_slug)
-            return Post.objects.all().filter(tags__name__icontains=tag)
-        return Post.objects.all()
+
+class TagListView(PostListView):
+
+    def get_queryset(self, *args, **kwargs):
+        return Post.published.filter(tags__slug=self.kwargs.get('tag_slug'))
 
 
 def post_detail(request, year, month, day, slug):
