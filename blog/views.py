@@ -1,11 +1,12 @@
 from django.shortcuts import render, get_object_or_404
 from .models import Post
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.views.generic import ListView
+from django.views.generic import ListView, DetailView
 from .forms import EmailPostForm, CommentForm
 from django.core.mail import send_mail
 from django.views.decorators.http import require_POST
 from taggit.models import Tag
+from django.db.models import Count
 
 
 class PostListView(ListView):
@@ -19,16 +20,32 @@ class PostListView(ListView):
 
 class TagListView(PostListView):
 
-    def get_queryset(self, *args, **kwargs):
-        return Post.published.filter(tags__slug=self.kwargs.get('tag_slug'))
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        tag = get_object_or_404(Tag, slug=self.kwargs['tag_slug'])
+        context['tag'] = tag
+        context['posts'] = Post.published.filter(tags__in=[tag])
+        return context
 
 
-def post_detail(request, year, month, day, slug):
-    post = get_object_or_404(Post, status=Post.Status.PUBLISHED, slug=slug, publish__year=year, publish__month=month, publish__day=day)
-    comments = post.comments.filter(active=True)
-    form = CommentForm()
-    context = {'post': post, 'comments': comments, 'form': form}
-    return render(request, 'blog/post/detail.html', context)
+class PostDetailView(DetailView):
+
+    model = Post
+    template_name = 'blog/post/detail.html'
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        post = get_object_or_404(Post, status=Post.Status.PUBLISHED, slug=self.kwargs['slug'], publish__year=self.kwargs['year'],
+                                 publish__month=self.kwargs['month'], publish__day=self.kwargs['day'])
+        comments = post.comments.filter(active=True)
+        post_tag_ids = post.tags.values_list('id', flat=True)
+        similar_posts = Post.published.filter(tags__in=post_tag_ids).exclude(id=post.id)
+        similar_posts = similar_posts.annotate(same_tags=Count('tags')).order_by('-same_tags', '-publish')[:4]
+
+        context['comments'] = comments
+        context['post'] = post
+        context['form'] = CommentForm()
+        context['similar_posts'] = similar_posts
+        return context
 
 
 def post_share(request, post_id):
