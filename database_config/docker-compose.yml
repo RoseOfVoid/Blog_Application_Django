@@ -1,0 +1,12 @@
+services:
+    
+    blog_db:
+        image: postgres:17
+        ports: [8080:5432]
+        environment:
+            - POSTGRES_USER=blog
+            - POSTGRES_PASSWORD=admin
+            - POSTGRES_DB=blog
+            - PGDATA=/var/lib/postgresql/data/pgdata
+        volumes:
+            - ./db_data:/var/lib/postgresql/data
