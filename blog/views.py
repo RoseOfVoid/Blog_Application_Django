@@ -2,11 +2,12 @@ from django.shortcuts import render, get_object_or_404
 from .models import Post
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.generic import ListView, DetailView
-from .forms import EmailPostForm, CommentForm
+from .forms import EmailPostForm, CommentForm, SearchForm
 from django.core.mail import send_mail
 from django.views.decorators.http import require_POST
 from taggit.models import Tag
 from django.db.models import Count
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 
 
 class PostListView(ListView):
@@ -14,8 +15,13 @@ class PostListView(ListView):
     paginate_by = 3
     template_name = 'blog/post/list.html'
 
-    def get_queryset(self, *args, **kwargs):
-        return Post.published.all()
+    def get_queryset(self):
+        return Post.objects.all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = SearchForm()
+        return context
 
 
 class TagListView(PostListView):
@@ -26,6 +32,7 @@ class TagListView(PostListView):
         context['tag'] = tag
         context['posts'] = Post.published.filter(tags__in=[tag])
         return context
+
 
 
 class PostDetailView(DetailView):
@@ -80,3 +87,26 @@ def post_comment(request, post_id):
         comment.save()
     context = {'post': post, 'form': form, 'comment': comment}
     return render(request, 'blog/post/comment.html', context)
+
+
+def post_search(request):
+    form = SearchForm()
+    query = None
+    result = []
+
+    if 'query' in request.GET:
+        form = SearchForm(request.GET)
+        if form.is_valid():
+            query = form.cleaned_data['query']
+            search_vector = SearchVector('title', weight='A') + SearchVector('body', weight='B')
+            search_query = SearchQuery(query)
+            result = (Post.published.annotate(search=search_vector, rank=SearchRank(search_vector,search_query)).filter(rank__gte=0.3).order_by('-rank'))
+
+
+    context = {
+        'form': form,
+        'query': query,
+        'result': result
+    }
+    return render(request, 'blog/post/search.html', context=context)
+
